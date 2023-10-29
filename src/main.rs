@@ -1,12 +1,16 @@
-const HEIGHT: usize = 1200;
-const WIDTH: usize = 1200;
+use chrono::{self,Timelike};
+
+use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
+
+const WIDTH: usize = 640;
+const HEIGHT: usize = 480;
 
 type Point2D = (i32, i32);
 
 // Triangle coordiantes *must* be presenting clockwise
 type Triangle = [Point2D; 3];
-type Color = char;
-type Fb = [[Color; WIDTH]; HEIGHT];
+type Color = u32;
+type Fb = [Color; WIDTH * HEIGHT];
 
 struct Tile {
     x0: i32,
@@ -22,7 +26,7 @@ struct Tile {
 fn edge_equation(v0: &Point2D, v1: &Point2D) -> [i32; 3] {
     let a = v0.1 - v1.1;
     let b = v1.0 - v0.0;
-    let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1)) / 2;
+    let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1) + 1) / 2;
 
     [a, b, c]
 }
@@ -33,12 +37,14 @@ fn rasterize_tile(fb: &mut Fb, tile: Tile, color: Color) {
         e0[i] = tile.a[i] * tile.x0 + tile.b[i] * tile.y0 + tile.c[i];
     }
 
-    for y in tile.y0..tile.y1 {
+    for y in tile.y0..=tile.y1 {
         let mut e = e0;
 
-        for x in tile.x0..tile.x1 {
+        for x in tile.x0..=tile.x1 {
             if 0 <= e[0] && 0 <= e[1] && 0 <= e[2] {
-                fb[y as usize][x as usize] = color;
+                assert!(0 <= y && y < HEIGHT as i32, "({x},{y}) outside screen");
+                assert!(0 <= x && x < WIDTH as i32, "({x},{y}) outside screen");
+                fb[y as usize * WIDTH + x as usize] = color;
             }
             for i in 0..3 {
                 e[i] += tile.a[i];
@@ -72,7 +78,7 @@ fn rasterize_triangle(fb: &mut Fb, v: Triangle, color: Color) {
         y1 = v[i].1.max(y1);
     }
 
-    println!("({x0},{y0}) - ({x1},{y1})");
+    //println!("({x0},{y0}) - ({x1},{y1})");
 
     let tile = Tile {
         x0,
@@ -106,6 +112,7 @@ fn rasterize_triangle(fb: &mut Fb, v: Triangle, color: Color) {
 //                                            ###### (48, 15)
 //
 
+/*
 fn lastnonspace(line: &[char]) -> usize {
     let mut last = 0;
     for (i, ch) in line.iter().enumerate() {
@@ -116,23 +123,89 @@ fn lastnonspace(line: &[char]) -> usize {
 
     last
 }
+*/
+
+fn rotate(p: Point2D, origin: Point2D, angle: f32) -> Point2D {
+    let (x, y) = (p.0 - origin.0, p.1 - origin.1);
+    let (c, s) = (angle.cos(), angle.sin());
+    //print!("({},{})={} rotated by {angle} = ({c},{s}) around ({},{}) -> ", x, y, x*x+y*y, origin.0, origin.1);
+    let (x, y) = (x as f32 * c - y as f32 * s, y as f32 * c + x as f32 * s);
+    //println!("({},{})={}", x, y, x*x+y*y);
+
+    (x as i32 + origin.0, y as i32 + origin.1)
+}
 
 fn main() {
-    let mut fb = [[' '; WIDTH]; HEIGHT];
+    let mut window = Window::new(
+        "Display - ESC to exit",
+        WIDTH,
+        HEIGHT,
+        WindowOptions {
+            resize: true,
+            scale: Scale::X2,
+            scale_mode: ScaleMode::AspectRatioStretch,
+            ..WindowOptions::default()
+        },
+    )
+    .expect("Unable to Open Window");
 
-    rasterize_triangle(&mut fb, [(20, 0), (50, 16), (3, 10)], '#');
-    rasterize_triangle(&mut fb, [(1, 3), (41, 3), (48, 9)], '*');
-    rasterize_triangle(&mut fb, [(0, 0), (50, 20), (45, 20)], '.');
+    // Limit to max ~60 fps update rate
+    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    window.set_background_color(20, 20, 20);
+    let mut fb = [0; WIDTH * HEIGHT];
 
-    rasterize_triangle(&mut fb, [(30, 20), (60, 20), (60, 40)], '1');
-    rasterize_triangle(&mut fb, [(30, 20), (60, 40), (30, 40)], '2');
+    let center = (WIDTH as i32 / 2, HEIGHT as i32 / 2);
+    let hp0 = (center.0, HEIGHT as i32 / 5);
+    let mp0 = (center.0, 0);
+    let p1 = (center.0 + 20, center.1 + 20);
+    let p2 = (center.0 - 20, center.1 + 20);
 
+    //println!("{:?}", chrono::offset::Local::now());
 
-    for y in 0..=40 {
-        for x in 0..lastnonspace(&fb[y]) {
-            print!("{}", fb[y][x]);
-        }
+    while window.is_open() && !window.is_key_down(Key::Q) {
+	let t = chrono::offset::Local::now();
+	let (h, m, s) = (t.hour() % 12, t.minute(), t.second());
 
-        println!();
+        let hour_rad = 3.1415926535 * 2. / 12. * h as f32;
+        let minute_rad = 3.1415926535 * 2. / 60. * m as f32;
+        let second_rad = 3.1415926535 * 2. / 60. * s as f32;
+
+        rasterize_triangle(
+            &mut fb,
+            [(center.0, 0),
+	     (center.0 + 3, 4),
+	     (center.0 - 3, 4)]
+                .iter()
+                .map(|p| rotate(*p, center, second_rad))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+            0xFFFFFF,
+        );
+
+        rasterize_triangle(
+            &mut fb,
+            [hp0, p1, p2]
+                .iter()
+                .map(|p| rotate(*p, center, hour_rad))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+            0xFF0000,
+        );
+
+        rasterize_triangle(
+            &mut fb,
+            [mp0, p1, p2]
+                .iter()
+                .map(|p| rotate(*p, center, minute_rad))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+            0xFFFF00,
+        );
+
+        window.update_with_buffer(&fb, WIDTH, HEIGHT).unwrap();
+	fb = [0; HEIGHT * WIDTH];
     }
 }
