@@ -19,8 +19,24 @@ struct RenderTile {
     e: [i32; 3],
 }
 
+fn i18_chk(v: i32) {
+    // i16 isn't enough but two more bits would be
+    assert!(-32768 * 4 <= v);
+    assert!(v < 32768 * 4);
+}
+
+fn i18_chk3(v: &[i32; 3]) {
+    i18_chk(v[0]);
+    i18_chk(v[1]);
+    i18_chk(v[2]);
+}
+
 impl RenderTile {
     fn new(a: [i32; 3], b: [i32; 3], c: [i32; 3]) -> Self {
+        i18_chk3(&a);
+        i18_chk3(&b);
+        i18_chk3(&c);
+
         Self {
             a,
             b,
@@ -42,12 +58,14 @@ impl RenderTile {
         for i in 0..3 {
             self.e[i] += self.a[i];
         }
+        i18_chk3(&self.e);
     }
 
     fn stepy(&mut self) {
         for i in 0..3 {
             self.e0[i] += self.b[i];
             self.e = self.e0;
+            i18_chk3(&self.e);
         }
     }
 }
