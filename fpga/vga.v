@@ -3,22 +3,28 @@
 // https://www.mythtv.org/wiki/Modeline_Database#VESA_ModePool
 // 640 	480 	75 Hz 	37.5 kHz 	ModeLine "640x480" 31.50 640 656 720 840 480 481 484 500 -HSync -VSync
 
-module vga(input            clock_50_MHz,
-           output reg       vga_hs = 0,
-           output reg       vga_vs = 0,
+module vga(input wire        clock_50_MHz,
+           output reg        vga_hs = 0,
+           output reg        vga_vs = 0,
 
-           output wire      vga_clk,
-           output reg [7:0] vga_r,
-           output reg [7:0] vga_g,
-           output reg [7:0] vga_b,
-           output wire      vga_sync_n,
-           output wire      vga_blank_n,
+           output wire       vga_clk,
+           output wire [7:0] vga_r,
+           output wire [7:0] vga_g,
+           output wire [7:0] vga_b,
+           output wire       vga_sync_n,
+           output wire       vga_blank_n,
 
-           output reg [7:0] ledg = 'h 55,
+           output reg [7:0]  ledg = 'h 55,
            output reg [17:0] ledr = 'h 55);
 
    assign vga_sync_n = 1;
    assign vga_blank_n = 1;
+
+   // Ultimately, Tiny VGA has but 6b color
+   reg [5:0]                 vga_rgb;
+   assign vga_r = vga_rgb[5:4] << 6;
+   assign vga_g = vga_rgb[3:2] << 6;
+   assign vga_b = vga_rgb[1:0] << 6;
 
    pll pll_inst(.inclk0(clock_50_MHz),
                 .c0(vga_clk));
@@ -79,28 +85,28 @@ module vga(input            clock_50_MHz,
         x <= x + 1;
 
       if (x < M1 && y < M5) begin
-         vga_r <= x ^ y;
-         vga_g <= (x >> 1) ^ y;
-         vga_b <= x ^ (y >> 1);
-
-         if (y < 160)
-           {vga_r,vga_b,vga_g} <= {8'd0,8'd0,x[7:0]};
-         else if (y < 320)
-           {vga_r,vga_b,vga_g} <= {8'd0,x[7:0],8'd0};
+         if (y < 120) begin
+            vga_rgb[5:4] <= x ^ y;
+            vga_rgb[3:2] <= (x >> 1) ^ y;
+            vga_rgb[1:0] <= x ^ (y >> 1);
+         end else if (y < 240)
+           vga_rgb <= x[8:3];
+         else if (y < 360)
+           vga_rgb <= {x[6:3],x[8:7]};
          else
-           {vga_r,vga_b,vga_g} <= {x[7:0],8'd0,8'd0};
+           vga_rgb <= x[7:2] ^ y[7:2];
 
 
          if (x == 0 || x == M1 - 1 || y == 0 || y == M5 - 1)
-           {vga_r,vga_g,vga_b} <= 24'h00FFFF;
+           vga_rgb <= 6'b001111;
 
          if (boxa_x0[13:4] <= x && x < boxa_x1[13:4])
-           {vga_r,vga_g,vga_b} <= 24'hFF0000;
+           vga_rgb <= 6'b110000;
 
          if (boxb_x0[13:4] <= x && x < boxb_x1[13:4])
-           {vga_r,vga_g,vga_b} <= 24'h00FF00;
+           vga_rgb <= 6'b001100;
 
       end else
-        {vga_r,vga_b,vga_g} <= 0;
+        vga_rgb <= 0;
    end
 endmodule
