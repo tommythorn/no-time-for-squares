@@ -1,4 +1,4 @@
-use chrono::{self,Timelike};
+use chrono::{self, Timelike};
 
 use minifb::{Key, Scale, ScaleMode, Window, WindowOptions};
 
@@ -26,7 +26,7 @@ struct Tile {
 fn edge_equation(v0: &Point2D, v1: &Point2D) -> [i32; 3] {
     let a = v0.1 - v1.1;
     let b = v1.0 - v0.0;
-    let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1) + 1) / 2;
+    let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1)) / 2;
 
     [a, b, c]
 }
@@ -41,7 +41,14 @@ fn rasterize_tile(fb: &mut Fb, tile: Tile, color: Color) {
         let mut e = e0;
 
         for x in tile.x0..=tile.x1 {
-            if 0 <= e[0] && 0 <= e[1] && 0 <= e[2] {
+            if 0 <= e[0]
+                && 0 <= e[1]
+                && 0 <= e[2]
+                && 0 <= y
+                && y < HEIGHT as i32
+                && 0 <= x
+                && x < WIDTH as i32
+            {
                 assert!(0 <= y && y < HEIGHT as i32, "({x},{y}) outside screen");
                 assert!(0 <= x && x < WIDTH as i32, "({x},{y}) outside screen");
                 fb[y as usize * WIDTH + x as usize] = color;
@@ -156,32 +163,19 @@ fn main() {
 
     let center = (WIDTH as i32 / 2, HEIGHT as i32 / 2);
     let hp0 = (center.0, HEIGHT as i32 / 5);
-    let mp0 = (center.0, 0);
+    let mp0 = (center.0, 3);
     let p1 = (center.0 + 20, center.1 + 20);
     let p2 = (center.0 - 20, center.1 + 20);
 
     //println!("{:?}", chrono::offset::Local::now());
 
     while window.is_open() && !window.is_key_down(Key::Q) {
-	let t = chrono::offset::Local::now();
-	let (h, m, s) = (t.hour() % 12, t.minute(), t.second());
+        let t = chrono::offset::Local::now();
+        let (h, m, s) = (t.hour() % 12, t.minute(), t.second());
 
         let hour_rad = 3.1415926535 * 2. / 12. * h as f32;
         let minute_rad = 3.1415926535 * 2. / 60. * m as f32;
         let second_rad = 3.1415926535 * 2. / 60. * s as f32;
-
-        rasterize_triangle(
-            &mut fb,
-            [(center.0, 0),
-	     (center.0 + 3, 4),
-	     (center.0 - 3, 4)]
-                .iter()
-                .map(|p| rotate(*p, center, second_rad))
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap(),
-            0xFFFFFF,
-        );
 
         rasterize_triangle(
             &mut fb,
@@ -205,7 +199,22 @@ fn main() {
             0xFFFF00,
         );
 
+        rasterize_triangle(
+            &mut fb,
+            [
+                (center.0, 3),
+                (center.0 + 3, center.1 - 3),
+                (center.0 - 3, center.1 - 3),
+            ]
+            .iter()
+            .map(|p| rotate(*p, center, second_rad))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap(),
+            0xFFFFFF,
+        );
+
         window.update_with_buffer(&fb, WIDTH, HEIGHT).unwrap();
-	fb = [0; HEIGHT * WIDTH];
+        fb = [0; HEIGHT * WIDTH];
     }
 }
