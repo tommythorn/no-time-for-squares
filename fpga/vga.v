@@ -44,9 +44,6 @@ module vga(input wire        clock_50_MHz,
    reg [9:0]      x;
    reg [9:0]      y;
 
-   reg [13:0]      boxa_x0, boxa_x1;
-   reg [13:0]      boxb_x0, boxb_x1;
-
    wire [1:0] command =
 	      y == M5 ? 1 : // restart
 	      x == M1 ? 2 : // stepy
@@ -55,9 +52,9 @@ module vga(input wire        clock_50_MHz,
 
    wire	      hour_hit, min_hit, sec_hit;
 
-   tile hour_tile(clock_50_MHz, command, 54'h3ff7dfffb00097, 54'h3ff9d000880041, 54'h10bacff0ab114c, hour_hit);
-   tile min_tile(clock_50_MHz, command, 54'h3ffd3000980007, 54'hfc00013ff00, 54'h35daff3e68f8d3, min_hit);
-   tile sec_tile(clock_50_MHz, command, 54'hccffff7ff37, 54'h3ff8efffec0077, 54'h36e9e0217c8e55, sec_hit);
+   tile hour_tile(vga_clk, 54'h3ff7dfffb00097, 54'h3ff9d000880041, 54'h10bacff0ab114c, command, hour_hit);
+   tile min_tile(vga_clk, 54'h3ffd3000980007, 54'hfc00013ff00, 54'h35daff3e68f8d3, command, min_hit);
+   tile sec_tile(vga_clk, 54'hccffff7ff37, 54'h3ff8efffec0077, 54'h36e9e0217c8e55, command, sec_hit);
 
    always @(posedge vga_clk) begin
       vga_hs <= hs_neg ^ (M2 <= x && x < M3);
@@ -65,29 +62,6 @@ module vga(input wire        clock_50_MHz,
 
       if (x == M4 - 1) begin
          x <= 0;
-
-         if (y == 50) begin
-            boxa_x0 <= 423;
-            boxa_x1 <= 603;
-         end else if (50 < y && y < 90) begin
-            boxa_x0 <= boxa_x0 + 14;
-            boxa_x1 <= boxa_x1 + 11;
-         end else begin
-            boxa_x0 <= 0;
-            boxa_x1 <= 0;
-         end
-
-         if (y == 40) begin
-            boxb_x0 <= 600;
-            boxb_x1 <= 700;
-         end else if (40 < y && y < 90) begin
-            boxb_x0 <= boxb_x0 - 10;
-            boxb_x1 <= boxb_x1 - 9;
-         end else begin
-            boxb_x0 <= 0;
-            boxb_x1 <= 0;
-         end
-
          if (y == M8 - 1) begin
             y <= 0;
             {ledr,ledg} <= {ledr,ledg} + 1;
@@ -97,26 +71,9 @@ module vga(input wire        clock_50_MHz,
         x <= x + 1;
 
       if (x < M1 && y < M5) begin
-         if (y < 120) begin
-            vga_rgb[5:4] <= x ^ y;
-            vga_rgb[3:2] <= (x >> 1) ^ y;
-            vga_rgb[1:0] <= x ^ (y >> 1);
-         end else if (y < 240)
-           vga_rgb <= x[8:3];
-         else if (y < 360)
-           vga_rgb <= {x[6:3],x[8:7]};
-         else
-           vga_rgb <= x[7:2] ^ y[7:2];
-
-
-         if (x == 0 || x == M1 - 1 || y == 0 || y == M5 - 1)
-           vga_rgb <= 6'b001111;
-
-         if (boxa_x0[13:4] <= x && x < boxa_x1[13:4])
-           vga_rgb <= 6'b110000;
-
-         if (boxb_x0[13:4] <= x && x < boxb_x1[13:4])
-           vga_rgb <= 6'b001100;
+         vga_rgb[5:4] <= 1;
+         vga_rgb[3:2] <= 1;
+         vga_rgb[1:0] <= 1;
 
 	 // XXX this is a delayed signal, will fix later
 	 if (sec_hit)
