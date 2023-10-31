@@ -47,6 +47,18 @@ module vga(input wire        clock_50_MHz,
    reg [13:0]      boxa_x0, boxa_x1;
    reg [13:0]      boxb_x0, boxb_x1;
 
+   wire [1:0] command =
+	      y == M5 ? 1 : // restart
+	      x == M1 ? 2 : // stepy
+	      x < M1 && y < M5 ? 3 : // stepx
+	      0;
+
+   wire	      hour_hit, min_hit, sec_hit;
+
+   tile hour_tile(clock_50_MHz, command, 54'h3ff7dfffb00097, 54'h3ff9d000880041, 54'h10bacff0ab114c, hour_hit);
+   tile min_tile(clock_50_MHz, command, 54'h3ffd3000980007, 54'hfc00013ff00, 54'h35daff3e68f8d3, min_hit);
+   tile sec_tile(clock_50_MHz, command, 54'hccffff7ff37, 54'h3ff8efffec0077, 54'h36e9e0217c8e55, sec_hit);
+
    always @(posedge vga_clk) begin
       vga_hs <= hs_neg ^ (M2 <= x && x < M3);
       vga_vs <= vs_neg ^ (M6 <= y && y < M7);
@@ -105,6 +117,14 @@ module vga(input wire        clock_50_MHz,
 
          if (boxb_x0[13:4] <= x && x < boxb_x1[13:4])
            vga_rgb <= 6'b001100;
+
+	 // XXX this is a delayed signal, will fix later
+	 if (sec_hit)
+	   vga_rgb <= 6'b111111; // white
+	 else if (hour_hit)
+	   vga_rgb <= 6'b110000; // red
+	 else if (min_hit)
+	   vga_rgb <= 6'b111100; // yellow?
 
       end else
         vga_rgb <= 0;

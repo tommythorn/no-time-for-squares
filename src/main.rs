@@ -79,6 +79,38 @@ fn edge_equation(v0: &Point2D, v1: &Point2D) -> [i32; 3] {
     [a, b, c]
 }
 
+// Hack for the RTL implementation; pack three signed 18-bit values into a number
+fn pack(v: [i32; 3]) -> u64 {
+    v[0] as u64 & 0x3FFFF | (v[1] as u64 & 0x3FFFF) << 18 | (v[2] as u64 & 0x3FFFF) << 36
+}
+
+// cfg(test) something
+fn unpack(v: u64) -> [i32; 3] {
+    [
+        (v << 14) as i32 >> 14,
+        (v >> 18 << 14) as i32 >> 14,
+        (v >> 36 << 14) as i32 >> 14,
+    ]
+}
+
+fn check(v0: i32, v1: i32, v2: i32) {
+    let w = unpack(pack([v0, v1, v2]));
+    assert_eq!(w[0], v0);
+    assert_eq!(w[1], v1);
+    assert_eq!(w[2], v2);
+}
+
+#[test]
+fn test_pack() {
+    check(0, 0, 0);
+    check(1, 2, 3);
+    check(-1, -2, -3);
+    check(-1, -2, 3);
+    check(-1, 2, -3);
+    check(1, -2, -3);
+    check(1729, 666, -42);
+}
+
 fn rasterize_triangle(v: Triangle) -> RenderTile {
     let mut a = [0; 3];
     let mut b = [0; 3];
@@ -90,6 +122,10 @@ fn rasterize_triangle(v: Triangle) -> RenderTile {
         b[i] = edge[1];
         c[i] = edge[2];
     }
+
+    // dbg!(&(a, b, c));
+    // Convert to packed format
+    println!("54'h{:x}, 54'h{:x}, 54'h{:x},", pack(a), pack(b), pack(c));
 
     RenderTile::new(a, b, c)
 }
