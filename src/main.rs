@@ -76,6 +76,8 @@ fn edge_equation(v0: &Point2D, v1: &Point2D) -> [i32; 3] {
     let b = v1.0 - v0.0;
     let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1)) / 2;
 
+    println!("{v0:?},{v1:?} -> {:?}", [a, b, c]);
+
     [a, b, c]
 }
 
@@ -125,7 +127,7 @@ fn rasterize_triangle(v: Triangle) -> RenderTile {
 
     // dbg!(&(a, b, c));
     // Convert to packed format
-    println!("54'h{:x}, 54'h{:x}, 54'h{:x},", pack(a), pack(b), pack(c));
+    println!("Triangle {v:?} -> 54'h{:x}, 54'h{:x}, 54'h{:x},", pack(a), pack(b), pack(c));
 
     RenderTile::new(a, b, c)
 }

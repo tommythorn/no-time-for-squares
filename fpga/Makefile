@@ -18,3 +18,7 @@ $(proj).svf: output_files/$(proj).sof
 simtile:
 	iverilog -DSIM tile.v -o tile
 	./tile
+
+simedgeeqn:
+	iverilog -DSIM edgeeqn.v -o edgeeqn
+	./edgeeqn
