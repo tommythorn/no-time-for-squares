@@ -35,3 +35,33 @@ module tile(input wire clock,
 	e <= {e[`W*3-1:`W*2] + a[`W*3-1:`W*2], e[`W*2-1:`W] + a[`W*2-1:`W], e[`W-1:0] + a[`W-1:0]};
      end
 endmodule
+
+
+`ifdef SIM
+// FINE!  I'll simulate this
+
+module tb;
+   reg clock = 1;
+   always #5 clock = 1 - clock;
+
+   reg [1:0] command = 0;
+   wire      hour_hit;
+
+   tile hour_tile(clock, 54'h3ff7dfffb00097, 54'h3ff9d000880041, 54'h10bacff0ab114c, command, hour_hit);
+   initial begin
+      $monitor(clock, command, hour_hit);
+
+      #10 command = 1;
+      @(posedge clock);
+      command = 0;
+
+      #10 command = 3;
+      @(posedge clock);
+      @(posedge clock);
+      @(posedge clock);
+      @(posedge clock);
+      command = 0;
+      #100 $finish;
+   end
+endmodule
+`endif

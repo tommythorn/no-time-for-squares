@@ -14,3 +14,7 @@ output_files/$(proj).sof: $(proj).v
 
 $(proj).svf: output_files/$(proj).sof
 	quartus_cpf -c -q 12.0MHz -g 3.3 -n p output_files/$(proj).sof $(proj).svf
+
+simtile:
+	iverilog -DSIM tile.v -o tile
+	./tile
