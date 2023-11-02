@@ -1,5 +1,16 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/wokwi_test/badge.svg)
 
+# Analog Clock using a beam-racing triangle render
+
+The VGA timing is based directly on VEGA 640x480 @ 75 Hz.
+
+Using a tile-based beam-racing triangle render has always seemed like
+a good way to deal with the lack of a framebuffer. Tiny Tapeout gave
+me an opportunity to play with it.  However as this effort is pretty
+much defined by a mad-scramble to get SOMETHING done for Nov 4th
+everything is a consequence of that, so the design is very simple and
+not very ambitious.
+
 # What is Tiny Tapeout?
 
 TinyTapeout is an educational project that aims to make it easier and cheaper than ever to get your digital designs manufactured on a real chip.
