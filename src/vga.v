@@ -1,3 +1,4 @@
+`default_nettype none
 `timescale 1ns / 1ps
 
 // https://www.mythtv.org/wiki/Modeline_Database#VESA_ModePool

@@ -22,3 +22,4 @@ simtile:
 simedgeeqn:
 	iverilog -DSIM edgeeqn.v -o edgeeqn
 	./edgeeqn
+yosys:;yosys -p "synth_ecp5 -top tt_um_no_time_for_squares_tommythorn -json foobar" tt_um_no_time_for_squares_tommythorn.v vga.v tile.v

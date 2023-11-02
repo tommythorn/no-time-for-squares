@@ -21,8 +21,8 @@ module tt_um_no_time_for_squares_tommythorn
    wire       min_button  = ui_in[6];
    wire [3:0] debugsel    = ui_in[3:0];
 
-   wire       vga_hs = 0;
-   wire       vga_vs = 0;
+   wire       vga_hs;
+   wire       vga_vs;
    wire [7:0] vga_r;
    wire [7:0] vga_g;
    wire [7:0] vga_b;

@@ -1,3 +1,4 @@
+`default_nettype none
 `timescale 1ns / 1ps
 
 // Edge equation <x1,y1>, <x2,y2> -> <a, b, c>
