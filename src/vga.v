@@ -3,11 +3,9 @@
 // https://www.mythtv.org/wiki/Modeline_Database#VESA_ModePool
 // 640 	480 	75 Hz 	37.5 kHz 	ModeLine "640x480" 31.50 640 656 720 840 480 481 484 500 -HSync -VSync
 
-module vga(input wire        clock_50_MHz,
+module vga(input  wire       vga_clk,
            output reg        vga_hs = 0,
            output reg        vga_vs = 0,
-
-           output wire       vga_clk,
            output wire [7:0] vga_r,
            output wire [7:0] vga_g,
            output wire [7:0] vga_b,
@@ -25,9 +23,6 @@ module vga(input wire        clock_50_MHz,
    assign vga_r = vga_rgb[5:4] << 6;
    assign vga_g = vga_rgb[3:2] << 6;
    assign vga_b = vga_rgb[1:0] << 6;
-
-   pll pll_inst(.inclk0(clock_50_MHz),
-                .c0(vga_clk));
 
    parameter      M1 = 12 'd 640;
    parameter      M2 = 12 'd 656;

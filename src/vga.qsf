@@ -3,7 +3,7 @@
 #============================================================
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE115F29C7
-set_global_assignment -name TOP_LEVEL_ENTITY vga
+set_global_assignment -name TOP_LEVEL_ENTITY fpga
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "12.1"
 set_global_assignment -name LAST_QUARTUS_VERSION "21.1.0 Lite Edition"
 set_global_assignment -name USE_GENERATED_PHYSICAL_CONSTRAINTS OFF -section_id eda_blast_fpga
@@ -1196,6 +1196,7 @@ set_global_assignment -name TIMEQUEST_DO_CCPP_REMOVAL ON
 set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
 
+set_global_assignment -name VERILOG_FILE fpga.v
 set_global_assignment -name VERILOG_FILE vga.v
 set_global_assignment -name VERILOG_FILE tile.v
 
