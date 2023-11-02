@@ -10,6 +10,17 @@
 
 `define W 18
 
+// NB: this design should end up with just a three 18b adders and 6
+// 18b registers, but we should probably change the design to do this
+// explicitly.
+//
+// NB: Note that we should be able to tell of many x-steps are executed
+// and thus precompute B' = B - x-steps * A, thus replacing the y-step
+// with just e <= e + B' and eliminate e0, save half the registers.
+//
+// A more delicate change would be to reduce the precision from 18b
+// down to ~ 10b, but that's likely to introduce a bunch of edge
+// cases.
 module tile(input wire clock,
 	    // Render equation parameters; changing them should be followed by a restart
 	    input wire [`W*3-1:0] a, // That's actually three signed 18-bit values
@@ -20,7 +31,7 @@ module tile(input wire clock,
 
 	    output wire	      inside_triangle);
 
-   reg [`W*3-1:0]	      e0, e;
+   reg [`W*3-1:0]	      e0, e; // 18*3*2 = 108 bit
 
    assign inside_triangle = !(e[`W-1] | e[`W*2-1] | e[`W*3-1]); // If all values in e are positive
 

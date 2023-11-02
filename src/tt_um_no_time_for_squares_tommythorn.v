@@ -23,34 +23,17 @@ module tt_um_no_time_for_squares_tommythorn
 
    wire       vga_hs;
    wire       vga_vs;
-   wire [7:0] vga_r;
-   wire [7:0] vga_g;
-   wire [7:0] vga_b;
-   wire       vga_sync_n;
-   wire       vga_blank_n;
+   wire [5:0] vga_rgb;
 
     // https://tinytapeout.com/specs/pinouts/#common-peripherals
-   assign uo_out[0] = vga_r[7];
-   assign uo_out[1] = vga_g[7];
-   assign uo_out[2] = vga_b[7];
+   assign uo_out[0] = vga_rgb[5];
+   assign uo_out[1] = vga_rgb[3];
+   assign uo_out[2] = vga_rgb[1];
    assign uo_out[3] = vga_vs;
-   assign uo_out[4] = vga_r[6];
-   assign uo_out[5] = vga_g[6];
-   assign uo_out[6] = vga_b[6];
+   assign uo_out[4] = vga_rgb[4];
+   assign uo_out[5] = vga_rgb[2];
+   assign uo_out[6] = vga_rgb[0];
    assign uo_out[7] = vga_hs;
 
-   wire [7:0]  ledg;
-   wire [17:0] ledr;
-
-   vga vga_inst(vga_clk,
-                vga_hs,
-                vga_vs,
-                vga_r,
-                vga_g,
-                vga_b,
-                vga_sync_n,
-                vga_blank_n,
-
-                ledg,
-                ledr);
+   vga vga_inst(vga_clk, vga_hs, vga_vs, vga_rgb);
 endmodule
