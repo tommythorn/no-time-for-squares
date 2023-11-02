@@ -76,8 +76,6 @@ fn edge_equation(v0: &Point2D, v1: &Point2D) -> [i32; 3] {
     let b = v1.0 - v0.0;
     let c = -(a * (v0.0 + v1.0) + b * (v0.1 + v1.1)) / 2;
 
-    println!("{v0:?},{v1:?} -> {:?}", [a, b, c]);
-
     [a, b, c]
 }
 
@@ -113,7 +111,7 @@ fn test_pack() {
     check(1729, 666, -42);
 }
 
-fn rasterize_triangle(v: Triangle) -> RenderTile {
+fn triangle_edges(v: Triangle) -> ([i32; 3], [i32; 3], [i32; 3]) {
     let mut a = [0; 3];
     let mut b = [0; 3];
     let mut c = [0; 3];
@@ -125,9 +123,11 @@ fn rasterize_triangle(v: Triangle) -> RenderTile {
         c[i] = edge[2];
     }
 
-    // dbg!(&(a, b, c));
-    // Convert to packed format
-    println!("Triangle {v:?} -> 54'h{:x}, 54'h{:x}, 54'h{:x},", pack(a), pack(b), pack(c));
+    (a, b, c)
+}
+
+fn rasterize_triangle(v: Triangle) -> RenderTile {
+    let (a, b, c) = triangle_edges(v);
 
     RenderTile::new(a, b, c)
 }
@@ -142,9 +142,71 @@ fn rotate(p: Point2D, origin: Point2D, angle: f32) -> Point2D {
     (x as i32 + origin.0, y as i32 + origin.1)
 }
 
+#[test]
+fn calculate_second_edges() {
+    let center = (WIDTH as i32 / 2, HEIGHT as i32 / 2);
+    let hp0 = (center.0, HEIGHT as i32 / 5);
+    let mp0 = (center.0, 3);
+    let p1 = (center.0 + 20, center.1 + 20);
+    let p2 = (center.0 - 20, center.1 + 20);
+
+    println!("         case (second)");
+    for s in 0..60 {
+        let second_rad = std::f32::consts::PI * 2. / 60. * s as f32;
+
+        let (a, b, c) = triangle_edges(
+            [
+                (center.0, 3),
+                (center.0 + 3, center.1 - 3),
+                (center.0 - 3, center.1 - 3),
+            ]
+            .iter()
+            .map(|p| rotate(*p, center, second_rad))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap(),
+        );
+        println!("          {s}: {{sec_a, sec_b, sec_c}} <= {{54'h{:x}, 54'h{:x}, 54'h{:x}}};",
+                 pack(a), pack(b), pack(c));
+    }
+    println!("         endcase");
+
+    println!("         case (minute)");
+    for m in 0..60 {
+        let minute_rad = std::f32::consts::PI * 2. / 60. * m as f32;
+        let (a, b, c) = triangle_edges(
+            [mp0, p1, p2]
+                .iter()
+                .map(|p| rotate(*p, center, minute_rad))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+        );
+        println!("         {m}: {{min_a, min_b, min_c}} <= {{54'h{:x}, 54'h{:x}, 54'h{:x}}};",
+                 pack(a), pack(b), pack(c));
+    }
+    println!("         endcase");
+
+    println!("         case (hour)");
+    for h in 0..60 {
+        let hour_rad = std::f32::consts::PI * 2. / 12. * h as f32;
+        let (a, b, c) = triangle_edges(
+            [hp0, p1, p2]
+                .iter()
+                .map(|p| rotate(*p, center, hour_rad))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+        );
+        println!("         {h}: {{hour_a, hour_b, hour_c}} <= {{54'h{:x}, 54'h{:x}, 54'h{:x}}};",
+                 pack(a), pack(b), pack(c));
+    }
+    println!("         endcase");
+}
+
 fn main() {
     let mut window = Window::new(
-        "Display - ESC to exit",
+        "Watch - 'q' to exit",
         WIDTH,
         HEIGHT,
         WindowOptions {
@@ -221,6 +283,23 @@ fn main() {
             minute_tile.stepy();
             second_tile.stepy();
         }
+
+	fb[center.0 as usize] = 0xFFFFFF;	// center top
+	fb[center.1 as usize * WIDTH + center.0 as usize] = 0xFFFFFF; // center
+	fb[center.1 as usize * WIDTH +  80] = 0xFFFFFF; // center left
+	fb[center.1 as usize * WIDTH + 560] = 0xFFFFFF; // center right
+	fb[479 as usize * WIDTH + center.0 as usize] = 0xFFFFFF; // center bot
+
+	// 1 O'clock = 30gr = (240/2, 240 * sqrt(3)/2) = (120,208)
+	fb[center.0 as usize + 120 + (center.1 as usize + 208) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize - 120 + (center.1 as usize + 208) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize + 120 + (center.1 as usize - 208) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize - 120 + (center.1 as usize - 208) * WIDTH] = 0xFFFFFF; // 1
+
+	fb[center.0 as usize + 208 + (center.1 as usize + 120) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize - 208 + (center.1 as usize + 120) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize + 208 + (center.1 as usize - 120) * WIDTH] = 0xFFFFFF; // 1
+	fb[center.0 as usize - 208 + (center.1 as usize - 120) * WIDTH] = 0xFFFFFF; // 1
 
         window.update_with_buffer(&fb, WIDTH, HEIGHT).unwrap();
         fb = [0; HEIGHT * WIDTH];

@@ -7,10 +7,19 @@
 // The implementation of the VGA timing signals is very naive, but
 // this way is easy to understand and immediately relatable to the
 // ModeLine parameters.
-module vga(input  wire      vga_clk,
+//
+// Pixels are visible if vga_visible
+// vga_horizontal_blank_strobe marks the beginning of the horizontal blanking
+// vga_vertical_blank_strobe marks the beginning of the vertical blanking
+module vga(input  wire      clock,
+           input wire       reset,
+           output wire      vga_visible,
+           output reg       vga_horizontal_blank_strobe, // one clock wide pulse pr line
+           output reg       vga_vertical_blank_strobe, // one clock wide pulse pr frame
            output reg       vga_hs,
            output reg       vga_vs,
-           output reg [5:0] vga_rgb);
+           output reg [9:0] vga_x,
+           output reg [9:0] vga_y );
 
    parameter      M1 = 10 'd 640;
    parameter      M2 = 10 'd 656;
@@ -20,49 +29,95 @@ module vga(input  wire      vga_clk,
    parameter      M6 = 10 'd 481;
    parameter      M7 = 10 'd 484;
    parameter      M8 = 10 'd 500;
-   parameter      hs_neg = 1'd 1;
-   parameter      vs_neg = 1'd 1;
+   parameter      hs_active = 1'd 0; // negative sync
+   parameter      vs_active = 1'd 0;
 
-   reg [9:0]      x, y;
+   reg            vga_horizontal_visible, vga_vertical_visible;
+   assign vga_visible = vga_horizontal_visible & vga_vertical_visible;
 
-   wire [1:0] command =
-	      y == M5 ? 1 : // restart
-	      x == M1 ? 2 : // stepy
-	      x < M1 && y < M5 ? 3 : // stepx
-	      0;
+   always @(posedge clock) begin
+      vga_vertical_blank_strobe <= 0;
+      vga_horizontal_blank_strobe <= 0;
 
-   wire	      hour_hit, min_hit, sec_hit;
+      vga_x <= vga_x + 1;
 
-   // Three precomputed triangles; XXX get edgeeqn integrated
-   tile hour_tile(vga_clk, 54'h3ff7dfffb00097, 54'h3ff9d000880041, 54'h10bacff0ab114c, command, hour_hit);
-   tile min_tile(vga_clk, 54'h3ffd3000980007, 54'hfc00013ff00, 54'h35daff3e68f8d3, command, min_hit);
-   tile sec_tile(vga_clk, 54'hccffff7ff37, 54'h3ff8efffec0077, 54'h36e9e0217c8e55, command, sec_hit);
+      if (vga_x == M1-1) begin
+         vga_horizontal_blank_strobe <= 1;
+         vga_horizontal_visible <= 0;
+      end
 
-   always @(posedge vga_clk) begin
-      vga_hs <= hs_neg ^ (M2 <= x && x < M3); // XXX we can eliminate the relations
-      vga_vs <= vs_neg ^ (M6 <= y && y < M7);
+      if (vga_x == M2-1)
+        vga_hs <= hs_active;
 
-      if (x == M4 - 1) begin
-         x <= 0;
-         if (y == M8 - 1)
-            y <= 0;
-         else
-           y <= y + 1;
-      end else
-        x <= x + 1;
+      if (vga_x == M3-1)
+        vga_hs <= !hs_active;
 
-      if (x < M1 && y < M5) begin // XXX we can eliminate the relations
-         vga_rgb <= 6'b010101; // grey
+      if (vga_x == M4-1) begin
+         vga_horizontal_visible <= 1;
+         vga_x <= 0;
+         vga_y <= vga_y + 1;
 
-	 // XXX this is a delayed signal, will fix later
-	 if (sec_hit)
-	   vga_rgb <= 6'b111111; // white
-	 else if (hour_hit)
-	   vga_rgb <= 6'b110000; // red
-	 else if (min_hit)
-	   vga_rgb <= 6'b111100; // yellow?
+         if (vga_y == M5-1) begin
+            vga_vertical_blank_strobe <= 1;
+            vga_vertical_visible <= 0;
+         end
 
-      end else
-        vga_rgb <= 0;
+         if (vga_y == M6-1)
+           vga_vs <= vs_active;
+
+         if (vga_y == M7-1)
+           vga_vs <= !vs_active;
+
+         if (vga_y == M8-1) begin
+            vga_y <= 0;
+            vga_vertical_visible <= 1;
+         end
+      end
+
+      if (reset) begin
+         vga_x <= 0;
+         vga_y <= 0;
+         vga_hs <= !hs_active;
+         vga_vs <= !hs_active;
+         vga_vertical_visible <= 1;
+         vga_horizontal_visible <= 1;
+         vga_vertical_blank_strobe <= 0;
+         vga_horizontal_blank_strobe <= 0;
+      end
    end
 endmodule
+
+
+`ifdef SIMVGA
+module tb;
+   reg clock = 1;
+   reg reset = 1;
+   wire hour_button;
+   wire minute_button;
+   wire [3:0] debug_sel;
+
+   wire       vga_hs;
+   wire       vga_vs;
+   wire [7:0] debug_out;
+
+   wire       vga_visible, vga_vertical_visible, vga_horizontal_visible;
+   wire       vga_horizontal_blank_strobe, vga_vertical_blank_strobe;
+
+   always #5 clock = ~clock;
+
+   vga vga_inst(.clock(clock),
+                .reset(reset),
+                .vga_visible(vga_visible),
+                .vga_horizontal_blank_strobe(vga_horizontal_blank_strobe),
+                .vga_vertical_blank_strobe(vga_vertical_blank_strobe),
+                .vga_hs(vga_hs),
+                .vga_vs(vga_vs));
+
+   initial begin
+      $dumpfile("vga.vcd");
+      $dumpvars(0, vga_inst);
+      #20 reset = 0;
+      #10000000 $finish;
+   end
+endmodule
+`endif

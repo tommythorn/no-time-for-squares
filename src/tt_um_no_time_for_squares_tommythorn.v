@@ -14,12 +14,10 @@ module tt_um_no_time_for_squares_tommythorn
 
    // use bidirectionals as outputs
    assign uio_oe = 8'b11111111;
-   assign uio_out [7:0] = 8'd0; // XXX TBD
 
-   wire       vga_clk     = clk;
-   wire       hour_button = ui_in[7];
-   wire       min_button  = ui_in[6];
-   wire [3:0] debugsel    = ui_in[3:0];
+   wire       hour_button   = ui_in[7];
+   wire       minute_button = ui_in[6];
+   wire [3:0] debug_sel     = ui_in[3:0];
 
    wire       vga_hs;
    wire       vga_vs;
@@ -35,5 +33,8 @@ module tt_um_no_time_for_squares_tommythorn
    assign uo_out[6] = vga_rgb[0];
    assign uo_out[7] = vga_hs;
 
-   vga vga_inst(vga_clk, vga_hs, vga_vs, vga_rgb);
+   clock clock_inst(clk, !rst_n,
+                    hour_button, minute_button, debug_sel,
+                    vga_hs, vga_vs, vga_rgb,
+                    uio_out);
 endmodule
