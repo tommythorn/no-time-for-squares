@@ -8,8 +8,9 @@ project:
   source_files:
     - tt_um_no_time_for_squares_tommythorn.v
     - vga.v
-    - tile.v
-    - edgeeqn.v
+# for the future
+#    - tile.v
+#    - edgeeqn.v
   top_module:  "tt_um_no_time_for_squares_tommythorn"
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
