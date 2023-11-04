@@ -11,6 +11,21 @@ much defined by a mad-scramble to get SOMETHING done for Nov 4th
 everything is a consequence of that, so the design is very simple and
 not very ambitious.
 
+Every frame the 640x480 VGA matrix is scanned, advancing the state of
+the intersecting lines of the three triangles.  If the (x,y)
+coordinate of the "beam" lines on the positive side of each line, the
+beam is inside the triangle.  Among the visible triangles, the highest
+priority triangle sets the color, else we default to a grey color.
+Twelve dots are also marked, to make it easier to read the clock.
+
+The algorithm might be easily understood by examining the software
+model in Rust, in the `sw` directory.
+
+The main "UI" is two buttons to advance hour and minutes respectively.
+The least significant two bits selects which outputs are routed to the
+bidirectional port (frame number, seconds * 4 + hz-strobe * 2 +
+vs-strobe, minute * 4, hour * 4).
+
 # What is Tiny Tapeout?
 
 TinyTapeout is an educational project that aims to make it easier and cheaper than ever to get your digital designs manufactured on a real chip.
