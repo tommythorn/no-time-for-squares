@@ -1,5 +1,7 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/wokwi_test/badge.svg)
 
+![](clock.png)
+
 # Analog Clock using a beam-racing triangle render
 
 The VGA timing is based directly on VEGA 640x480 @ 75 Hz.
