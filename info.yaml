@@ -48,14 +48,14 @@ documentation:
 
 # A description of what the inputs do (e.g. red button, SPI CLK, SPI MOSI, etc).
   inputs:
-    - clock, we depend on 31.5 MHz clock for video generation
+    - clock
     - reset
-    - hour, active high to advance the hour hand
-    - minute, active high to advance the minute hand
-    - debugsel[3], select between 16 variables to inspect, to be detailed later
-    - debugsel[2]
-    - debugsel[1]
-    - debugsel[0]
+    - hour, advance hour
+    - minute, advance minute
+    - unused
+    - unused
+    - debugsel\[1]
+    - debugsel\[0]
 # Outputs are supposed to match TinyVGA (cf. https://tinytapeout.com/specs/pinouts/)
   outputs:
     - R1
@@ -68,14 +68,14 @@ documentation:
     - hsync
 # So many ways this can fail, so this gets us a minimum of insight, selected by debugsel
   bidirectional:
-    - output debug[7]
-    - output debug[6]
-    - output debug[5]
-    - output debug[4]
-    - output debug[3]
-    - output debug[2]
-    - output debug[1]
-    - output debug[0]
+    - debug\[7]
+    - debug\[6]
+    - debug\[5]
+    - debug\[4]
+    - debug\[3]
+    - debug\[2]
+    - debug\[1]
+    - debug\[0]
 
 # The following fields are optional
   tag:          "clock,video"      # comma separated list of tags: test, encryption, experiment, clock, animation, utility, industrial, pwm, fpga, alu, microprocessor, risc, riscv, sensor, signal generator, fft, filter, music, bcd, sound, serial, timer, random number generator, calculator, decoder, counter, puzzle, multiplier, game, oscillator,
